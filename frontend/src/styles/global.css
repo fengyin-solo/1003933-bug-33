@@ -35,3 +35,27 @@ body { margin: 0; background: #f6f8fb; color: #1f2937; }
 .error-text { color: #b42318; }
 .status-legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 12px; color: var(--muted); }
 .legend-item { background: #eef2f7; border-radius: 999px; padding: 2px 10px; }
+.ok-text { color: #067647; }
+.pending-text { color: #b54708; }
+.banner { border: 1px solid #f6c76f; background: #fffaeb; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; }
+.banner-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.banner-row + .banner-row { margin-top: 6px; }
+.banner-actions { display: flex; gap: 12px; flex-shrink: 0; }
+.detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 16px; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin: 0 0 12px; }
+.detail-item dt { font-size: 12px; color: var(--muted); }
+.detail-item dd { margin: 2px 0 0; font-size: 13px; }
+.detail-item.span-all { grid-column: 1 / -1; }
+.panel { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.panel-head h3 { margin: 0; font-size: 14px; }
+.panel-note { font-size: 12px; color: var(--muted); }
+.roster-add { display: flex; gap: 8px; margin-bottom: 10px; }
+.roster-add input { flex: 1; max-width: 280px; }
+.roster-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.roster-item { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+.empty-hint { color: var(--muted); font-size: 13px; margin: 4px 0; }
+.form-col { display: flex; flex-direction: column; gap: 10px; }
+.form-row { display: flex; flex-direction: column; gap: 4px; }
+.form-row > span { font-size: 12px; color: var(--muted); }
+.form-row input, .form-row select, .form-row textarea, .roster-add input, .filter-item input { border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 13px; font-family: inherit; }
+.form-actions { display: flex; justify-content: flex-end; }

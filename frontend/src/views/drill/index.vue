@@ -11,6 +11,18 @@
       </div>
     </header>
 
+    <div v-if="pendingTxs.length" class="banner warn">
+      <div v-for="tx in pendingTxs" :key="tx.drillId" class="banner-row">
+        <span>
+          演练 {{ tx.drillCode }} 的「{{ opLabel(tx.op) }}」在写入「{{ tx.failedStep }}」时中断，可从失败点继续。
+        </span>
+        <span class="banner-actions">
+          <button class="link" type="button" @click="resumeTx(tx.drillId)">从失败点继续</button>
+          <button class="link" type="button" @click="dismissTx(tx.drillId)">忽略</button>
+        </span>
+      </div>
+    </div>
+
     <div class="stat-row">
       <article v-for="item in stats" :key="item.label" class="stat-card">
         <span class="stat-label">{{ item.label }}</span>
@@ -43,17 +55,34 @@
       </thead>
       <tbody>
         <tr v-for="row in rows" :key="String(row.id)">
-          <td v-for="column in columns" :key="column">{{ row[column] ?? '—' }}</td>
+          <td v-for="column in columns" :key="column">
+            <span v-if="column === '参演人数'" :class="{ 'pending-text': headcountOf(row) === null }">
+              {{ headcountText(row) }}
+            </span>
+            <template v-else>{{ row[column] ?? '—' }}</template>
+          </td>
           <td>{{ row.status }}</td>
           <td class="row-actions">
+            <button class="link" type="button" @click="goDetail(row)">详情</button>
+            <button v-if="row.status === '待筹备'" class="link" type="button" @click="startPrepare(row)">
+              开始筹备
+            </button>
+            <button v-if="row.status === '筹备中'" class="link" type="button" @click="goDetail(row)">
+              继续筹备
+            </button>
             <button
-              v-for="action in actions"
-              :key="action"
+              v-if="row.status === '待筹备' || row.status === '筹备中'"
               class="link"
               type="button"
-              @click="runAction(action, row)"
+              @click="implement(row)"
             >
-              {{ action }}
+              实施演练
+            </button>
+            <button v-if="row.status === '已实施'" class="link" type="button" @click="goSummary(row)">
+              提交总结
+            </button>
+            <button v-if="row.status === '已总结'" class="link" type="button" @click="goSummary(row)">
+              查看总结
             </button>
           </td>
         </tr>
@@ -65,6 +94,7 @@
 
     <footer class="page-foot">
       <span>共 {{ total }} 条应急演练记录</span>
+      <span v-if="noticeMessage" class="ok-text">{{ noticeMessage }}</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
   </section>
@@ -72,24 +102,35 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 import {
   downloadEntries,
   listEntries,
   moduleMeta,
-  runAction as applyAction,
 } from '@/api/local-service'
-import type { EntryRow } from '@/data/types'
+import {
+  dismissPendingTx,
+  headcountOf,
+  implementDrill,
+  listPendingTx,
+  opLabel,
+  resumePendingTx,
+  startPrepare as startPrepareService,
+} from '@/api/drill-service'
+import type { EntryRow, PendingTx } from '@/data/types'
 
 const meta = moduleMeta('drill')
+const router = useRouter()
 const columns = ["演练编号", "隐患点编号", "演练主题", "演练日期", "参演人数", "演练类型", "演练评价", "演练状态"]
-const actions = ["开始筹备", "实施演练", "提交总结"]
 const statuses = ["待筹备", "筹备中", "已实施", "已总结", "已归档"]
 const stats = [{"label": "年度演练次数", "value": 0}, {"label": "已实施场次", "value": 0}, {"label": "待筹备计划", "value": 0}]
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
+const noticeMessage = ref('')
+const pendingTxs = ref<PendingTx[]>([])
 const filters = ref<Record<string, string>>({})
 const filterFields = columns.slice(0, 3)
 const statusSummary = computed(() =>
@@ -98,6 +139,11 @@ const statusSummary = computed(() =>
     count: rows.value.filter((row) => String(row.status) === status).length,
   })),
 )
+
+function headcountText(row: EntryRow): string {
+  const headcount = headcountOf(row)
+  return headcount === null ? '待补录' : String(headcount)
+}
 
 function resetFilters() {
   filters.value = {}
@@ -112,22 +158,48 @@ function openCreate() {
   errorMessage.value = '演练记录登记入口尚未接入审批流'
 }
 
-function runAction(action: string, row: EntryRow) {
-  errorMessage.value = ''
-  const result = applyAction(meta.key, Number(row.id), action)
-  if (!result.ok) {
+function goDetail(row: EntryRow) {
+  router.push({ name: 'drill-detail', params: { id: Number(row.id) } })
+}
+
+function goSummary(row: EntryRow) {
+  router.push({ name: 'drill-summary', params: { id: Number(row.id) } })
+}
+
+function applyResult(result: { ok: boolean; message: string }) {
+  reload()
+  if (result.ok) {
+    noticeMessage.value = result.message
+  } else {
     errorMessage.value = result.message
-    return
   }
+}
+
+function startPrepare(row: EntryRow) {
+  applyResult(startPrepareService(Number(row.id)))
+}
+
+function implement(row: EntryRow) {
+  applyResult(implementDrill(Number(row.id)))
+}
+
+function resumeTx(drillId: number) {
+  applyResult(resumePendingTx(drillId))
+}
+
+function dismissTx(drillId: number) {
+  dismissPendingTx(drillId)
   reload()
 }
 
 function reload() {
   errorMessage.value = ''
+  noticeMessage.value = ''
   try {
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items
     total.value = payload.total
+    pendingTxs.value = listPendingTx()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '应急演练列表读取失败'
   }

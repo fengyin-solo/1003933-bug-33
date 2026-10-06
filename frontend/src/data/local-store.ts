@@ -42,10 +42,12 @@ export function listRows(key: string): EntryRow[] {
 
 export function saveRows(key: string, rows: EntryRow[]): void {
   const next = { ...allRows(), [key]: rows }
-  cache = next
+  // 先落库再提交内存：写入失败时缓存不脏，页面不会把没存上的名单/讲评当成已保存，
+  // 也不会因为半成功的写入在刷新后丢数据。调用方负责捕获异常并记录断点。
   if (typeof window !== 'undefined' && window.localStorage) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   }
+  cache = next
 }
 
 export function resetRows(key: string): EntryRow[] {

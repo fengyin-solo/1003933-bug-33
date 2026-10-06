@@ -5,7 +5,7 @@ export type EntryRow = {
   status: string
   pending: boolean
   abnormal: boolean
-  [field: string]: string | number | boolean
+  [field: string]: string | number | boolean | string[]
 }
 
 export type ModuleMeta = {
@@ -35,4 +35,21 @@ export type ActionResult = {
 export type OverviewResult = {
   cards: { label: string; value: number }[]
   modules: { name: string; created: number; pending: number; abnormal: number }[]
+}
+
+/** 应急演练总结提交内容：评价、讲评、撤离结果同进同出，一次原子写入。 */
+export type DrillSummaryPayload = {
+  演练评价: string
+  讲评: string
+  撤离结果: string
+}
+
+/** 中断续办记录：写入失败时把操作、负载和失败步骤记下来，重新进入后从失败点继续。 */
+export type PendingTx = {
+  op: 'prepare' | 'roster' | 'implement' | 'summarize'
+  drillId: number
+  drillCode: string
+  payload: string[] | DrillSummaryPayload | null
+  failedStep: string
+  at: string
 }
