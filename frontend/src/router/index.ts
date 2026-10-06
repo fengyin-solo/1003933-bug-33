@@ -14,6 +14,8 @@ const Engineering = () => import('@/views/engineering/index.vue')
 const Acceptance = () => import('@/views/acceptance/index.vue')
 const Rectification = () => import('@/views/rectification/index.vue')
 const Drill = () => import('@/views/drill/index.vue')
+const DrillDetail = () => import('@/views/drill/detail.vue')
+const DrillSummary = () => import('@/views/drill/summary.vue')
 const Device = () => import('@/views/device/index.vue')
 const Report = () => import('@/views/report/index.vue')
 const Propaganda = () => import('@/views/propaganda/index.vue')
@@ -37,6 +39,8 @@ const router = createRouter({
     { path: '/acceptance', name: 'acceptance', component: Acceptance },
     { path: '/rectification', name: 'rectification', component: Rectification },
     { path: '/drill', name: 'drill', component: Drill },
+    { path: '/drill/:id', name: 'drill-detail', component: DrillDetail },
+    { path: '/drill/:id/summary', name: 'drill-summary', component: DrillSummary },
     { path: '/device', name: 'device', component: Device },
     { path: '/report', name: 'report', component: Report },
     { path: '/propaganda', name: 'propaganda', component: Propaganda },

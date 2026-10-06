@@ -61,18 +61,44 @@ export function resetModule(key: string): PageResult {
   return listEntries(key)
 }
 
+export function cellText(value: unknown): string {
+  if (value === null || value === undefined) {
+    return ''
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((item) =>
+        typeof item === 'object' && item !== null
+          ? Object.values(item as Record<string, unknown>).map(cellText).filter(Boolean).join('/')
+          : cellText(item),
+      )
+      .filter(Boolean)
+      .join('；')
+  }
+  if (typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).map(cellText).filter(Boolean).join('；')
+  }
+  return String(value)
+}
+
 export function exportEntries(key: string): { filename: string; content: string } {
   const meta = moduleMeta(key)
   const header = ['编号', ...meta.fields, '当前状态']
   const lines = [header.join(',')]
   for (const row of listRows(key)) {
-    lines.push([row.id, ...meta.fields.map((field) => row[field] ?? ''), row.status].join(','))
+    lines.push([row.id, ...meta.fields.map((field) => row[field] ?? ''), row.status]
+      .map((value) => cellText(value))
+      .join(','))
   }
   return { filename: `${meta.name}-清单.csv`, content: `\uFEFF${lines.join('\n')}` }
 }
 
 export function downloadEntries(key: string): void {
   const { filename, content } = exportEntries(key)
+  downloadCsv(filename, content)
+}
+
+export function downloadCsv(filename: string, content: string): void {
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
